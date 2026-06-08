@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.env
+*.key
+*.pem
+dist/
+build/
+*.egg-info/
+.ruff_cache/
+
+# never commit converted output or OCR cache
+out/
+*.md.bak
+# test files — never put real documents in the repo
+tests/fixtures/*.pdf
+tests/fixtures/*.docx
