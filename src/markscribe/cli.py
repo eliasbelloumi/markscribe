@@ -19,6 +19,14 @@ from . import __version__
 from ._ui import console
 from .config import clear_api_key, get_api_key, mask_key, set_api_key
 from .converter import SUPPORTED_EXTENSIONS, get_md
+
+
+def _will_use_ocr(path: Path, ocr_mode: str) -> bool:
+    return (
+        path.suffix.lower().lstrip(".") == "pdf"
+        and get_api_key() is not None
+        and ocr_mode != "off"
+    )
 from .picker import open_path, pick_input, pick_output_dir
 
 DEFAULT_OUT = Path.home() / ".cache" / "markscribe" / "out"
@@ -128,7 +136,11 @@ def _convert_file(path: Path, ocr: str, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     dest = out_dir / f"{path.stem}.md"
     console.print(f"\n  [dim]{path.name}[/dim]")
-    result = get_md(path, ocr)
+    if _will_use_ocr(path, ocr):
+        result = get_md(path, ocr)
+    else:
+        with console.status("[dim]Converting...[/dim]"):
+            result = get_md(path, ocr)
     dest.write_text(result, encoding="utf-8")
     console.print(f"  [green]→[/green] {dest}")
     open_path(dest)
@@ -150,11 +162,16 @@ def _convert_folder(folder: Path, ocr: str, out_dir: Path) -> None:
 
     out_dir.mkdir(parents=True, exist_ok=True)
     ok = errors = 0
+    n = len(files)
 
-    for f in files:
-        console.print(f"\n  [dim]{f.name}[/dim]")
+    for idx, f in enumerate(files, 1):
+        console.print(f"\n  [{idx}/{n}] [dim]{f.name}[/dim]")
         try:
-            result = get_md(f, ocr)
+            if _will_use_ocr(f, ocr):
+                result = get_md(f, ocr)
+            else:
+                with console.status("[dim]Converting...[/dim]"):
+                    result = get_md(f, ocr)
             dest = out_dir / f"{f.stem}.md"
             dest.write_text(result, encoding="utf-8")
             console.print(f"  [green]✓[/green] {f.name}")
